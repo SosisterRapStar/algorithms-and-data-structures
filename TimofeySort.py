@@ -1,3 +1,7 @@
+import time
+import random
+
+
 def merge(array1, array2):
     new_arr = array1 + array2
     a1 = 0
@@ -34,9 +38,14 @@ def merge(array1, array2):
 #
 #     return merge(left, right)
 
+def get_minrun(n):
+    r = 0
+    while n >= 64:
+        r = r | (n & 1)
+        n //= 2
+    return n + r
+def binaryInsertionSort(array, left_p, right_p, a):
 
-def binaryInsertionSort(left_p, right_p, a):
-    global array
     el = array[a]
     left = left_p
     right = right_p
@@ -49,8 +58,7 @@ def binaryInsertionSort(left_p, right_p, a):
     for i in range(a, left, -1):
         array[i], array[i - 1] = array[i - 1], array[i]
 
-def reversedBinaryInsertionSort(left_p, right_p, a):
-    global array
+def reversedBinaryInsertionSort(array, left_p, right_p, a):
     el = array[a]
     left = left_p
     right = right_p
@@ -60,7 +68,6 @@ def reversedBinaryInsertionSort(left_p, right_p, a):
             right = mid
         else:
             left = mid + 1
-    print(left)
     for i in range(a, left, -1):
         array[i], array[i - 1] = array[i - 1], array[i]
 
@@ -68,37 +75,32 @@ def reversedBinaryInsertionSort(left_p, right_p, a):
 
 
 
-def reverse(index1, index2):
-    global array
+def reverse(array, index1, index2):
     while index1 < index2:
         array[index1], array[index2] = array[index2], array[index1]
         index1 += 1
         index2 -= 1
 
-def getMinRun(n):
-    r = 0
-    while n >= 64:
-        r |= n & 1
-        n >>= 1
-    return n + r
 
-def TimSort():
-    global array
-    minRun = 32
-    pointer = 0
-    pointer = 0
+
+
+def TimSort(array):
     array_of_runs = []
+    minRun = get_minrun(len(array))
+    pointer = 0
+    pointer = 0
+
     while pointer < len(array) - 1:
         start_run = pointer
         if array[pointer] < array[pointer + 1]:     #increment subsequence
             if start_run + minRun < len(array):
                 for pointer in range(start_run, start_run + minRun - 1):
                     if array[pointer] > array[pointer + 1]:
-                        binaryInsertionSort(start_run, pointer, pointer + 1)
+                        binaryInsertionSort(array, start_run, pointer, pointer + 1)
             else:
                 for pointer in range(start_run, len(array) - 1):
                     if array[pointer] > array[pointer + 1]:
-                        binaryInsertionSort(start_run, pointer, pointer + 1)
+                        binaryInsertionSort(array, start_run, pointer, pointer + 1)
             while pointer + 1 < len(array) and array[pointer] <= array[pointer + 1]:
                 pointer += 1
 
@@ -106,46 +108,56 @@ def TimSort():
             if start_run + minRun < len(array):
                 for pointer in range(start_run, start_run + minRun - 1):
                     if array[pointer] < array[pointer + 1]:
-                        reversedBinaryInsertionSort(start_run, pointer, pointer + 1)
+                        reversedBinaryInsertionSort(array, start_run, pointer, pointer + 1)
             else:
                 for pointer in range(start_run, len(array) - 1):
                     if array[pointer] < array[pointer + 1]:
-                        reversedBinaryInsertionSort(start_run, pointer, pointer + 1)
+                        reversedBinaryInsertionSort(array, start_run, pointer, pointer + 1)
             while pointer + 1 < len(array) and array[pointer] >= array[pointer + 1]:
                 pointer += 1
-            reverse(start_run, pointer)
+            reverse(array, start_run, pointer)
         array_of_runs.append(array[start_run: pointer + 1])
-        pointer += 1
-    print(merging(array_of_runs))
 
+        while len(array_of_runs) > 2:
+            x = len(array_of_runs[-3])
+            y = len(array_of_runs[-2])
+            z = len(array_of_runs[-1])
+            if not ((x >= y + z) and (y >= z)):
+                Z = array_of_runs.pop()
+                Y = array_of_runs.pop()
+                X = array_of_runs.pop()
+                if len(X) > len(Z):
+                    t = merge(Y, Z)
+                    array_of_runs.append(t)
+                    array_of_runs.append(X)
+                else:
+                    t = merge(Y, X)
+                    array_of_runs.append(t)
+                    array_of_runs.append(Z)
 
-def merging(array_of_runs):
-    while len(array_of_runs) > 0:
-        if len(array_of_runs) == 1:
-            return array_of_runs[0]
-        if len(array_of_runs) == 2:
-            return merge(array_of_runs[0], array_of_runs[1])
-        x = array_of_runs.pop()
-        y = array_of_runs.pop()
-        z = array_of_runs.pop()
-        if len(x) > len(y) + len(z) and len(y) > len(z):
-            y = merge(z, y)
-            array_of_runs.append(y)
-            array_of_runs.append(x)
-        else:
-            if len(z) >= len(x):
-                y = merge(x, y)
-                array_of_runs.append(z)
-                array_of_runs.append(y)
             else:
-                y = merge(z, y)
-                array_of_runs.append(x)
-                array_of_runs.append(y)
+                break
+        if len(array_of_runs) == 2 and len(array_of_runs[-1]) > len(array_of_runs[-2]):
+            array_of_runs.append(merge(array_of_runs.pop(), array_of_runs.pop()))
 
 
-    return array_of_runs
+        pointer += 1
+
+    while(len(array_of_runs) > 1):
+        array_of_runs.append(merge(array_of_runs.pop(), array_of_runs.pop()))
+    return array_of_runs[0]
 
 
-array = [708, 639, 364, 967, 336, 846, 468, 545, 762, 118, 320, 487, 46, 93, 247, 211, 293, 136, 884, 225, 304, 600, 676, 38, 333, 883, 332, 95, 963, 646, 451, 86, 758, 980, 255, 412, 391, 430, 507, 754, 491, 164, 279, 721, 509, 848, 604, 552, 952, 563, 269, 45, 814, 789, 478, 907, 595, 902, 176, 246, 502, 353, 639, 932, 14, 496, 728, 862, 759, 169, 345, 45, 931, 363, 695, 255, 847, 103, 86, 48, 656, 942, 509, 244, 981, 400, 644, 115, 523, 304, 123, 487, 125, 851, 777, 567, 561, 763, 236, 405]
-TimSort()
 
+
+
+
+array = [random.randint(-10_000, 10_000) for i in range(100_000)]
+
+start = time.time()
+a = TimSort(array)
+end = time.time()
+
+
+print("The time of execution of above program is :",
+      (end-start) * 10**3, "ms")
