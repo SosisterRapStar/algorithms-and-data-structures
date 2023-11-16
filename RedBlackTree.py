@@ -1,4 +1,4 @@
-from typing import Optional, Type, Any
+from typing import Optional, Type, Any, Union
 
 
 class StringToTreeInitalizationEror(Exception):
@@ -99,8 +99,9 @@ def right_rotation(node: RBnode):
         else:
             branch_ancestor.left = node
     if root:
-        return root # так как он станет в верху остальных нод
+        return root  # так как он станет в верху остальных нод
     return node
+
 
 class RBTree(BinaryTree):
     def __init__(self, root: Optional[RBnode] = None):
@@ -116,15 +117,30 @@ class RBTree(BinaryTree):
 
             self.dfs(root.right)
 
-    def red_uncle_fix(self, node, paren):
-        pass
-
-    def fix_root(self, new_root):
+    def fix_root(self, new_root: RBnode) -> None:
         if self.root.parent is not None:
             self.root = new_root
+            self.root.color = 0
 
 
-    def fix_tree(self, node):
+    # функция для перекрашивания в случае с красным дядей
+    def red_uncle(self, gparent: RBnode, parent: RBnode, uncle: RBnode) -> None:
+        parent.color = 0
+        uncle.color = 0
+        if gparent != self.root:
+            gparent.color = 1
+            self.fix_tree(gparent)
+        else:
+            gparent.color = 0
+
+    # функция перекрашивания в случае с черным дядей
+    def black_uncle(self, parent: RBnode, gparent: RBnode) -> None:
+        parent.color = 0
+        gparent.color = 1
+
+
+
+    def fix_tree(self, node: Union[RBnode, NullNode]) -> None:
         parent = node.parent
         if parent.color == 1:
             gparent = node.parent.parent
@@ -132,90 +148,219 @@ class RBTree(BinaryTree):
                 uncle = gparent.right
                 if parent.left == node:
                     if uncle.color == 1:
-                        parent.color = 0
-                        uncle.color = 0
-                        if gparent != self.root:
-                            gparent.color = 1
-                            self.fix_tree(gparent)
-                        else:
-                            gparent.color = 0
-                        return ...
-                        # нам нужно проходится вверх от деда, так как в таком случае дед становится красным
-                        # это может нарушить прошлое построение дерева
-                    # в этом случае нам не нужно ничего менять за дедом, так как узел, который встал на место деда - черный
+                        self.red_uncle(gparent, parent, uncle)
+                        return
                     if uncle.color == 0:
-                        self.fix_root(right_rotation(parent)) # убрать root
-                        parent.color = 0
-                        gparent.color = 1
-                        return ...
-                # в данном случае тоже ничего не надо менять за дедом,
-                # так как узел который встал на место деда так и остался черным
+                        self.fix_root(right_rotation(parent))
+                        self.black_uncle(parent, gparent)
+                        return
                 else:
-
                     if uncle.color == 0:
                         self.fix_root(left_rotation(node))
                         self.fix_root(right_rotation(node))
-                        node.color = 0
-                        gparent.color = 1
-                        return ...
+                        self.black_uncle(node, gparent)
+                        return
                     if uncle.color == 1:
-                        parent.color = 0
-                        uncle.color = 0
-                        if gparent != self.root:
-                            gparent.color = 1
-                            self.fix_tree(gparent)
-                        else:
-                            gparent.color = 0
-                        return ...
-
-
-
-                        # тут нужно перекрасить деда в красный
-                        # добавить проверку на root
-                        # ...
+                        self.red_uncle(gparent, parent, uncle)
+                        return
             else:
                 uncle = gparent.left
                 if parent.right == node:
                     if uncle.color == 1:
-                        parent.color = 0
-                        uncle.color = 0
-                        if gparent != self.root:
-                            gparent.color = 1
-                            self.fix_tree(gparent)
-                        else:
-                            gparent.color = 0
+                        self.red_uncle(gparent, parent, uncle)
+                        return
 
-                        return ...
-                        # нам нужно проходится вверх от деда, так как в таком случае дед становится красным
-                        # это может нарушить прошлое построение дерева
                     else:
-                        self.fix_root(left_rotation(parent)) # убрать self.root
-                        parent.color = 0
-                        gparent.color = 1
-                        return ...
+                        self.fix_root(left_rotation(parent))
+                        self.black_uncle(parent, gparent)
+                        return
                 else:
                     if uncle.color == 0:
-                        self.fix_root(right_rotation(node)) # убрать root
-                        self.fix_root(left_rotation(node)) # убрать root
-                        node.color = 0
-                        gparent.color = 1
-                        return ...
+                        self.fix_root(right_rotation(node))
+                        self.fix_root(left_rotation(node))
+                        self.black_uncle(node, gparent)
+                        return
                     if uncle.color == 1:
-                        uncle.color = 0
-                        parent.color = 0
-                        if gparent != self.root:
-                            gparent.color = 1
-                            self.fix_tree(gparent)
-                        else:
-                            gparent.color = 0
-
-                        return ...
-                        # тут нужно перекрасить деда в красный, но нужна проверка на root
-                        # ...
+                        self.red_uncle(gparent, parent, uncle)
+                        return
         else:
-            return ...
+            return
 
-    def insert(self, data: int):
+
+    def find(self, data: int) -> Optional[RBnode]:
+        curr_node = self.root
+        while type(curr_node) is not NullNode:
+            if curr_node.data > data:
+                curr_node = curr_node.left
+            elif curr_node.data < data:
+                curr_node = curr_node.right
+            else:
+                return curr_node
+        return None  # вообще тут можно вызывать ошибку сразу, но наверное лучше вернуть None
+
+
+    def fix_delete(self, node: RBnode, from_right: bool):
+        # в данном случае node - это родитель поддерева, у которого уменьшилась черная высота
+        right_son = node.right
+        left_son = node.left
+        if from_right: # это значит, что высота уменьшилась у правого относительно этого узла поддерева
+            right_gson = left_son.right
+            left_gson = left_son.left
+            if node.color == 1:
+                if left_son.color == 0:
+                    if left_gson.color == 0 and right_gson.color == 0:
+                        node.color = 0
+                        left_son.color = 1
+                    elif left_gson.color == 1:
+                        left_son.color = 1
+                        node.color = 0
+                        left_gson.color = 0
+                        self.fix_root(right_rotation(left_son))
+                    elif right_gson.color == 1:
+                        left_son.color = 1
+                        left_rotation(right_gson)
+                        right_gson.color = 0
+            else:
+                if left_son.color == 1:
+                    self.fix_root(right_rotation(left_son))
+                    left_son.color = 0
+                    node.color = 1
+                    self.fix_delete(node, False)
+                else:
+                    if left_gson.color == 1:
+                        left_son.color = 0
+                        node.color = 1
+                        left_gson.color = 0
+                        self.fix_root(right_rotation(left_son))
+                    elif right_gson.color == 1:
+                        left_son.color = 1
+                        left_rotation(right_gson)
+                        right_gson.color = 0
+                    elif right_gson.color == 0 and left_gson.color == 0:
+                        if node.parent.right == node:
+                            self.fix_delete(node.parent, True)
+                        else:
+                            self.fix_delete(node.parent, False)
+        else:
+            right_gson = right_son.right
+            left_gson = right_son.left
+            if node.color == 1:
+                if right_son.color == 0:
+                    if right_gson.color == 0 and left_gson.color == 0:
+                        node.color = 0
+                        right_son.color = 1
+                    elif right_gson.color == 1:
+                        right_son.color = 1
+                        node.color = 0
+                        right_gson.color = 0
+                        self.fix_root(left_rotation(right_son))
+                    elif left_gson.color == 1:
+                        right_son.color = 1
+                        right_rotation(left_gson)
+                        left_gson.color = 0
+            else:
+                if right_son.color == 1:
+                    self.fix_root(left_rotation(right_son))
+                    right_son.color = 0
+                    node.color = 1
+                    self.fix_delete(node, False)
+                else:
+                    if right_gson.color == 1:
+                        right_son.color = 0
+                        node.color = 1
+                        right_gson.color = 0
+                        self.fix_root(left_rotation(right_son))
+                    elif left_gson.color == 1:
+                        right_son.color = 1
+                        right_rotation(left_gson)
+                        left_gson.color = 0
+                    elif left_gson.color == 0 and right_gson.color == 0:
+                        if node.parent.right == node:
+                            self.fix_delete(node.parent, True)
+                        else:
+                            self.fix_delete(node.parent, False)
+
+
+
+
+
+    def replace_and_change_color(self, node, is_right: bool):
+        if is_right:
+            new_node = node.right
+        else:
+            new_node = node.left
+        parent = node.parent
+        if node == self.root:
+            self.root = node
+            node.parent = None
+            return
+        if parent.right == node: # является правым потомком
+            new_node.parent = parent
+            parent.right = new_node # перевязываем поддерево
+        else: # является левым потомком
+            new_node.parent = parent
+            parent.left = new_node
+        # так как поддерево, которое является потомком узла только с одним потомком
+        # может быть только поддеревом с красным узлом - то для баланса нужно перекрасить его в черный
+        new_node.color = 0
+
+
+    def find_node_for_replace(self, node):
+        cur_node = node.left
+        prev = None
+        while type(cur_node) is not NullNode:
+            prev = cur_node
+            cur_node = cur_node.right
+        return prev
+
+
+    def del_node(self, data: int):
+        node = self.find(data)
+        self.delete(node)
+
+
+    def delete(self, node: RBnode) -> None:
+        if type(node.right) is NullNode or type(node.left) is NullNode:
+            if type(node.right) is NullNode and type(node.left) is NullNode: # если у
+
+                if node == self.root:
+                    self.root = None
+                    return
+
+                is_right = None
+                if node.parent.right == node:
+                    node.parent.right = NullNode(node.parent)
+                    is_right = True
+                else:
+                    node.parent.left = NullNode(node.parent)
+                    is_right = False
+
+                if node.color == 1:
+                    return
+                self.fix_delete(node.parent, is_right)
+                return
+            if type(node.right) is not NullNode:
+                self.replace_and_change_color(node, True)
+                return
+            self.replace_and_change_color(node, False)
+            return
+        else:
+            n = self.find_node_for_replace(node)
+            node.data = n.data
+            self.delete(n)
+            return
+
+
+
+
+
+
+
+
+            # после удаления высота отдного из поддеревьев родительского узла будет нарушена
+            # нужно вернуть баланс
+
+    def insert(self, data: int) -> None:
         if self.root is None:
             self.root = RBnode(data, 0, None)
             return ...
@@ -306,6 +451,24 @@ node_2 = RBnode(2, True, node_1, None, None)
 node_3 = RBnode(3, True, node_2, None, None)
 
 tree = RBTree()
+tree.insert(2)
+tree.insert(32)
+tree.insert(23)
+tree.insert(21)
+tree.insert(22)
+tree.insert(9)
+tree.insert(1)
+tree.insert(36)
+tree.insert(38)
+tree.insert(35)
+tree.insert(34)
+tree.insert(40)
+tree.insert(37)
+tree.insert(41)
+tree.del_node(41)
+tree.del_node(32)
+tree.del_node(35)
+tree.del_node(34)
 
 tree.prnt()
 
@@ -315,3 +478,5 @@ tree.prnt()
 # tree.prnt()
 
 # a = RBnode(3, 'Red', None)
+
+
