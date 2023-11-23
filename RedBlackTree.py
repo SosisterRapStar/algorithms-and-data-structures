@@ -9,11 +9,19 @@ class StringToTreeInitalizationEror(Exception):
         return f'StringToTreeInitalizationError: {self.message}' if self.message else 'StringToTreeInitalizationError'
 
 
+class NullNode:
+    def __init__(self, parent=None):
+        self.parent = parent
+        self.color = 0
+
+
 class Node:
     def __init__(self, data: Any, left: Optional['Node'] = None, right: Optional['Node'] = None):
         self.data = data
         self.left = left
         self.right = right
+        self.left = left if left is not None else NullNode()
+        self.right = right if right is not None else NullNode()
 
     def __str__(self) -> str:
         return str(self.data)
@@ -32,18 +40,76 @@ class RBnode(Node):
         return str(self.data)
 
 
-class NullNode:
-    def __init__(self, parent):
-        self.parent = parent
-        self.color = 0
-
-
 class BinaryTree:
     def __init__(self, root: Node):
         self.root = root
 
-    def prnt(self):
-        self.dfs(self.root)
+    def recursion_dfs(self, root):
+        if type(root) != NullNode:
+            self.recursion_dfs(root.left)
+            if self.root == root:
+                print(root, 'root')
+            else:
+                print(root)
+            self.recursion_dfs(root.right)
+
+    def bfs(self):
+        queue = [self.root]
+        while queue:
+            node = queue.pop(0)
+            if type(node.left) != NullNode:
+                queue.append(node.left)
+            if type(node.right) != NullNode:
+                queue.append(node.right)
+
+            print(node)
+
+    def iterative_in_order_dfs(self):
+        stack = [self.root]
+        while type(stack[0]) != NullNode:
+            curr = stack[-1]
+            if type(curr) != NullNode:
+                stack.append(curr.left)
+                continue
+            else:
+                stack.pop()
+                node = stack.pop()
+                stack.append(node.right)
+                print(node)
+
+    def iterative_pre_order_dfs(self):
+        stack = [self.root]
+        while stack:
+            node = stack.pop()
+            print(node)
+            if type(node.right) != NullNode:
+                stack.append(node.right)
+            if type(node.left) != NullNode:
+                stack.append(node.left)
+
+    def iterative_post_order_dfs(self):
+        stack = [self.root]
+        while stack:
+            node = stack.pop()
+            print(node)
+            if type(node.left) != NullNode:
+                stack.append(node.left)
+            if type(node.right) != NullNode:
+                stack.append(node.right)
+
+    # def dfs(self, root):
+    #     if type(root) != NullNode:
+    #         self.dfs(root.left)
+    #         if self.root == root:
+    #             print(root, 'root', root.color)
+    #         else:
+    #             print(root, root.color)
+    #
+    #         self.dfs(root.right)
+
+    def prnt(self, traversal="bfs"):
+        getattr(self, traversal)()
+
 
     # def dfs(self, root):
     #     if root:
@@ -107,21 +173,10 @@ class RBTree(BinaryTree):
     def __init__(self, root: Optional[RBnode] = None):
         super().__init__(root)
 
-    def dfs(self, root):
-        if type(root) != NullNode:
-            self.dfs(root.left)
-            if self.root == root:
-                print(root, 'root', root.color)
-            else:
-                print(root, root.color)
-
-            self.dfs(root.right)
-
     def fix_root(self, new_root: RBnode) -> None:
         if self.root.parent is not None:
             self.root = new_root
             self.root.color = 0
-
 
     # функция для перекрашивания в случае с красным дядей
     def red_uncle(self, gparent: RBnode, parent: RBnode, uncle: RBnode) -> None:
@@ -137,8 +192,6 @@ class RBTree(BinaryTree):
     def black_uncle(self, parent: RBnode, gparent: RBnode) -> None:
         parent.color = 0
         gparent.color = 1
-
-
 
     def fix_tree(self, node: Union[RBnode, NullNode]) -> None:
         parent = node.parent
@@ -186,7 +239,6 @@ class RBTree(BinaryTree):
         else:
             return
 
-
     def find(self, data: int) -> Optional[RBnode]:
         curr_node = self.root
         while type(curr_node) is not NullNode:
@@ -198,12 +250,11 @@ class RBTree(BinaryTree):
                 return curr_node
         return None  # вообще тут можно вызывать ошибку сразу, но наверное лучше вернуть None
 
-
     def fix_delete(self, node: RBnode, from_right: bool):
         # в данном случае node - это родитель поддерева, у которого уменьшилась черная высота
         right_son = node.right
         left_son = node.left
-        if from_right: # это значит, что высота уменьшилась у правого относительно этого узла поддерева
+        if from_right:  # это значит, что высота уменьшилась у правого относительно этого узла поддерева
             right_gson = left_son.right
             left_gson = left_son.left
             if node.color == 1:
@@ -280,10 +331,6 @@ class RBTree(BinaryTree):
                         else:
                             self.fix_delete(node.parent, False)
 
-
-
-
-
     def replace_and_change_color(self, node, is_right: bool):
         if is_right:
             new_node = node.right
@@ -294,16 +341,15 @@ class RBTree(BinaryTree):
             self.root = node
             node.parent = None
             return
-        if parent.right == node: # является правым потомком
+        if parent.right == node:  # является правым потомком
             new_node.parent = parent
-            parent.right = new_node # перевязываем поддерево
-        else: # является левым потомком
+            parent.right = new_node  # перевязываем поддерево
+        else:  # является левым потомком
             new_node.parent = parent
             parent.left = new_node
         # так как поддерево, которое является потомком узла только с одним потомком
         # может быть только поддеревом с красным узлом - то для баланса нужно перекрасить его в черный
         new_node.color = 0
-
 
     def find_node_for_replace(self, node):
         cur_node = node.left
@@ -313,15 +359,13 @@ class RBTree(BinaryTree):
             cur_node = cur_node.right
         return prev
 
-
     def del_node(self, data: int):
         node = self.find(data)
         self.delete(node)
 
-
     def delete(self, node: RBnode) -> None:
         if type(node.right) is NullNode or type(node.left) is NullNode:
-            if type(node.right) is NullNode and type(node.left) is NullNode: # если у
+            if type(node.right) is NullNode and type(node.left) is NullNode:  # если у
 
                 if node == self.root:
                     self.root = None
@@ -349,13 +393,6 @@ class RBTree(BinaryTree):
             node.data = n.data
             self.delete(n)
             return
-
-
-
-
-
-
-
 
             # после удаления высота отдного из поддеревьев родительского узла будет нарушена
             # нужно вернуть баланс
@@ -398,7 +435,7 @@ def get_tree_from_file(name: str) -> BinaryTree:
 def parse_to_tree(string: str) -> BinaryTree:
     parse_stack = []
     buffer = ''
-    good_symbols = ('(', ' ', ')', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10')
+    good_symbols = ('(', ' ', ')', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9')
     root = None
 
     for i in string:
@@ -429,7 +466,7 @@ def parse_to_tree(string: str) -> BinaryTree:
             if parse_stack:
                 if len(sons) == 1:
                     node = sons[0]
-                    if not parse_stack[-1].left:
+                    if type(parse_stack[-1].left) == NullNode:
                         node.prev = parse_stack[-1]
                         parse_stack[-1].left = node
                     else:
@@ -465,18 +502,13 @@ tree.insert(34)
 tree.insert(40)
 tree.insert(37)
 tree.insert(41)
-tree.del_node(41)
-tree.del_node(32)
-tree.del_node(35)
-tree.del_node(34)
 
-tree.prnt()
 
-#
+tree.prnt(traversal='iterative_in_order_dfs')
+
+
 # input_string = "(1 (2 (3)) (4 (5)))"
 # tree = get_tree_from_file('example.txt')
-# tree.prnt()
+
 
 # a = RBnode(3, 'Red', None)
-
-
