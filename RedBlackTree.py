@@ -44,6 +44,24 @@ class BinaryTree:
     def __init__(self, root: Node):
         self.root = root
 
+
+
+
+    def rb_from_binary(self):
+        rb_tree = RBTree()
+        stack = [self.root]
+        while type(stack[0]) != NullNode:
+            curr = stack[-1]
+            if type(curr) != NullNode:
+                stack.append(curr.left)
+                continue
+            else:
+                stack.pop()
+                node = stack.pop()
+                stack.append(node.right)
+                rb_tree.insert(node.data)
+        return rb_tree
+
     def recursion_dfs(self, root):
         if type(root) != NullNode:
             self.recursion_dfs(root.left)
@@ -75,7 +93,10 @@ class BinaryTree:
                 stack.pop()
                 node = stack.pop()
                 stack.append(node.right)
-                print(node)
+                if node == self.root:
+                    print(node, "root")
+                else:
+                    print(node)
 
     def iterative_pre_order_dfs(self):
         stack = [self.root]
@@ -107,7 +128,7 @@ class BinaryTree:
     #
     #         self.dfs(root.right)
 
-    def prnt(self, traversal="bfs"):
+    def prnt(self, traversal="iterative_in_order_dfs"):
         getattr(self, traversal)()
 
 
@@ -250,6 +271,8 @@ class RBTree(BinaryTree):
                 return curr_node
         return None  # вообще тут можно вызывать ошибку сразу, но наверное лучше вернуть None
 
+
+
     def fix_delete(self, node: RBnode, from_right: bool):
         # в данном случае node - это родитель поддерева, у которого уменьшилась черная высота
         right_son = node.right
@@ -330,6 +353,7 @@ class RBTree(BinaryTree):
                             self.fix_delete(node.parent, True)
                         else:
                             self.fix_delete(node.parent, False)
+
 
     def replace_and_change_color(self, node, is_right: bool):
         if is_right:
@@ -425,19 +449,15 @@ class RBTree(BinaryTree):
                     root = root.left
         self.fix_tree(new_node)
 
-
-def get_tree_from_file(name: str) -> BinaryTree:
-    with open(name, 'r') as file:
-        data = file.read()
-    return parse_to_tree(data)
-
-
-def parse_to_tree(string: str) -> BinaryTree:
+def parse_to_tree(string: Optional[str] = None, file: str = None) -> BinaryTree:
+    if file:
+        with open(file, 'r') as file:
+            data = file.read()
+        string = data
     parse_stack = []
     buffer = ''
     good_symbols = ('(', ' ', ')', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9')
     root = None
-
     for i in string:
         if i not in good_symbols:
             raise StringToTreeInitalizationEror
@@ -483,32 +503,37 @@ def parse_to_tree(string: str) -> BinaryTree:
     return BinaryTree(root)
 
 
-node_1 = RBnode(1, True, None)
-node_2 = RBnode(2, True, node_1, None, None)
-node_3 = RBnode(3, True, node_2, None, None)
-
-tree = RBTree()
-tree.insert(2)
-tree.insert(32)
-tree.insert(23)
-tree.insert(21)
-tree.insert(22)
-tree.insert(9)
-tree.insert(1)
-tree.insert(36)
-tree.insert(38)
-tree.insert(35)
-tree.insert(34)
-tree.insert(40)
-tree.insert(37)
-tree.insert(41)
-
-
-tree.prnt(traversal='iterative_in_order_dfs')
+# node_1 = RBnode(1, True, None)
+# node_2 = RBnode(2, True, node_1, None, None)
+# node_3 = RBnode(3, True, node_2, None, None)
+#
+# tree = RBTree()
+# tree.insert(2)
+# tree.insert(32)
+# tree.insert(23)
+# tree.insert(21)
+# tree.insert(22)
+# tree.insert(9)
+# tree.insert(1)
+# tree.insert(36)
+# tree.insert(38)
+# tree.insert(35)
+# tree.insert(34)
+# tree.insert(40)
+# tree.insert(37)
+# tree.insert(41)
+#
+#
+# tree.prnt(traversal='iterative_in_order_dfs')
 
 
 # input_string = "(1 (2 (3)) (4 (5)))"
 # tree = get_tree_from_file('example.txt')
+tree = parse_to_tree(string="(1 (2 (3 (4 (5 (6))))))")
+tree.prnt()
+print()
+rb_tree = tree.rb_from_binary()
+rb_tree.prnt()
 
 
 # a = RBnode(3, 'Red', None)
