@@ -1,4 +1,6 @@
 from typing import Any, Optional
+from HashMap import HashMap
+from List import ArrayList
 
 graph = {
     1: [2],
@@ -35,15 +37,12 @@ def bfs(g, start):
                 vizited.add(vertex)
 
 
-def kruskal_algo(graph):
-    components_set = set()
-
 
 class DisjointSet:
 
     def __init__(self):
-        self.parent = dict()
-        self.rank = dict()
+        self.parent = HashMap()
+        self.rank = HashMap()
 
     # создает новое множество
     def make_set(self, x):
@@ -85,17 +84,17 @@ def parse_graph(file: str):
     with open(file, 'r') as file:
         data = file.read()
     data = data.split('\n')
-    d = []
+    d = ArrayList()
     for i in data:
-        d += [i.split()]
+        d += ArrayList(ArrayList(i.split()))
     print(d)
 
     vertexes = d[0]
-    graph = dict()
-    edges = []
+    graph = HashMap()
+    edges = ArrayList()
 
     for row in range(1, len(d)):
-        graph[vertexes[row - 1]] = []
+        graph[vertexes[row - 1]] = ArrayList()
         for col in range(len(d[row])):
             weight = int(d[row][col])
             if weight > 0:
@@ -104,12 +103,13 @@ def parse_graph(file: str):
                     edges += [(weight, vertexes[row - 1], vertexes[col])]
 
     print(edges)
+    print(ArrayList.sort(edges))
     kruskal_with_edges_list(edges)
 
 
 def kruskal_with_dict(graph):
     s = DisjointSet()
-    tree = dict()
+    tree = HashMap()
     for i in graph:
         s.make_set(i)
         graph[i] = sorted(graph[i], key=lambda x: x[1])
@@ -125,14 +125,14 @@ def kruskal_with_dict(graph):
 
 def kruskal_with_edges_list(edges):
     s = DisjointSet()
-    tree_edges = []
-    edges = sorted(edges, key=lambda x: x[0])
+    tree_edges = ArrayList()
+    edges = ArrayList.sort(edges)
     for i in edges:
         s.make_set(i[1])
         s.make_set(i[2])
     for i in edges:
         if s.i_get(i[1]) != s.i_get(i[2]):
-            tree_edges.append(i)
+            tree_edges.push_back(i)
             s.union(i[1], i[2])
     print(tree_edges)
 
@@ -148,13 +148,3 @@ def kruskal_with_edges_list(edges):
 
 parse_graph("example.txt")
 
-# a = DSElement(1)
-# b = DSElement(2)
-# c = DSElement(3)
-# d = DSElement(4)
-#
-# DisjointSet.union(a, b)
-#
-# DisjointSet.get(a)
-#
-# DisjointSet.union(a, c)
